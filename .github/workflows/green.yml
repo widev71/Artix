@@ -33,31 +33,25 @@ on:
 jobs:
   green-commit:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup GPG key
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-        run: |
-          echo "$GPG_PRIVATE_KEY" | gpg --import --batch --yes
-          gpg --list-secret-keys --keyid-format LONG
-
       - name: Configure Git
         run: |
           git config user.name "ducky"
           git config user.email "gkompor789@gmail.com"
-          git config user.signingkey F77FA5C7E92588A756B36E606FD5D53407B2C619
-          git config commit.gpgsign true
 
       - name: Generate commit & push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           export TZ="Asia/Jakarta"
           TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S %Z")
-          DAY=$(date +"%A")
           RANDOM_MSG_INDEX=$((RANDOM % 10))
 
           # Pesan commit acak agar terlihat natural
@@ -86,5 +80,5 @@ jobs:
           echo "> Automated daily activity tracker" >> README.md
 
           git add README.md
-          git commit -S -m "$COMMIT_MSG [$TIMESTAMP]" || echo "Nothing to commit"
+          git commit -m "$COMMIT_MSG [$TIMESTAMP]" || echo "Nothing to commit"
           git push origin main
