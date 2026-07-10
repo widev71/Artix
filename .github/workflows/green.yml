@@ -1,33 +1,8 @@
 name: 🌿 GitHub Greening
 
-# Jadwal acak: berjalan 18x sehari di jam-jam berbeda (pagi, siang, malam)
 on:
   schedule:
-    # Pagi (05:00 - 09:00 WIB = 22:00 - 02:00 UTC)
-    - cron: '7 22 * * *'   # 05:07 WIB
-    - cron: '23 22 * * *'  # 05:23 WIB
-    - cron: '51 23 * * *'  # 06:51 WIB
-    - cron: '14 0 * * *'   # 07:14 WIB
-    - cron: '38 0 * * *'   # 07:38 WIB
-    - cron: '5 1 * * *'    # 08:05 WIB
-    - cron: '47 1 * * *'   # 08:47 WIB
-    - cron: '29 2 * * *'   # 09:29 WIB
-
-    # Siang (10:00 - 14:00 WIB = 03:00 - 07:00 UTC)
-    - cron: '11 3 * * *'   # 10:11 WIB
-    - cron: '44 4 * * *'   # 11:44 WIB
-    - cron: '17 5 * * *'   # 12:17 WIB
-    - cron: '52 5 * * *'   # 12:52 WIB
-    - cron: '33 6 * * *'   # 13:33 WIB
-    - cron: '58 6 * * *'   # 13:58 WIB
-
-    # Sore & Malam (15:00 - 22:00 WIB = 08:00 - 15:00 UTC)
-    - cron: '19 8 * * *'   # 15:19 WIB
-    - cron: '41 9 * * *'   # 16:41 WIB
-    - cron: '8 11 * * *'   # 18:08 WIB
-    - cron: '36 13 * * *'  # 20:36 WIB
-
-  # Bisa juga dijalankan manual dari GitHub Actions tab
+    - cron: '0 17 * * *'  # Jalan sekali sehari jam 00:00 WIB
   workflow_dispatch:
 
 jobs:
@@ -38,23 +13,22 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Configure Git
         run: |
           git config user.name "ducky"
           git config user.email "gkompor789@gmail.com"
 
-      - name: Generate commit & push
+      - name: Random commits of the day
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           export TZ="Asia/Jakarta"
-          TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S %Z")
-          RANDOM_MSG_INDEX=$((RANDOM % 10))
 
-          # Pesan commit acak agar terlihat natural
+          # Acak jumlah commit hari ini: antara 1 sampai 25
+          COMMIT_COUNT=$((RANDOM % 25 + 1))
+          echo "🎲 Hari ini akan membuat $COMMIT_COUNT commit"
+
           MESSAGES=(
             "chore: update activity log"
             "docs: refresh README"
@@ -66,19 +40,31 @@ jobs:
             "docs: keep things fresh"
             "chore: daily sync"
             "docs: update timestamp"
+            "fix: minor adjustments"
+            "refactor: clean up notes"
+            "chore: tidy up"
+            "docs: small improvements"
+            "chore: scheduled update"
           )
 
-          COMMIT_MSG="${MESSAGES[$RANDOM_MSG_INDEX]}"
+          for i in $(seq 1 $COMMIT_COUNT); do
+            TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S %Z")
+            MSG_INDEX=$((RANDOM % ${#MESSAGES[@]}))
+            COMMIT_MSG="${MESSAGES[$MSG_INDEX]}"
 
-          # Update README dengan timestamp
-          echo "<!-- Auto-updated: $TIMESTAMP -->" > README.md
-          echo "" >> README.md
-          echo "# Activity Log" >> README.md
-          echo "" >> README.md
-          echo "Last sync: **$TIMESTAMP**" >> README.md
-          echo "" >> README.md
-          echo "> Automated daily activity tracker" >> README.md
+            # Isi README berbeda tiap commit agar selalu ada perubahan
+            echo "<!-- sync: $i/$COMMIT_COUNT | $TIMESTAMP -->" > README.md
+            echo "" >> README.md
+            echo "# Activity Log" >> README.md
+            echo "" >> README.md
+            echo "Sync **#$i** of **$COMMIT_COUNT** &nbsp;|&nbsp; $TIMESTAMP" >> README.md
+            echo "" >> README.md
+            echo "> Automated daily activity tracker" >> README.md
 
-          git add README.md
-          git commit -m "$COMMIT_MSG [$TIMESTAMP]" || echo "Nothing to commit"
+            git add README.md
+            git commit -m "$COMMIT_MSG (#$i)"
+            sleep 1
+          done
+
           git push origin main
+          echo "✅ Selesai! Total $COMMIT_COUNT commit hari ini."
